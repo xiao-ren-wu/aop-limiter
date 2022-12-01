@@ -68,9 +68,12 @@ public class RateLimitInterceptor implements ApplicationContextAware {
         // 根据限流时间维度计算时间
         long timeLong = getCurrentTimeLong(limitProperties.timeUnit());
 
-        // The arguments to the LUA script. time() returns unixtime in seconds.
+        // The arguments to the LUA script. time() returns unixTime in seconds.
         List<String> scriptArgs = Arrays.asList(limitProperties.replenishRate() + "",
-                limitProperties.burstCapacity() + "", (Instant.now().toEpochMilli() / timeLong) + "", "1", timeLong + "");
+                limitProperties.burstCapacity() + "",
+                (Instant.now().toEpochMilli() / timeLong) + "",
+                "1", timeLong + "");
+
         // 第一个参数是是否被限流，第二个参数是剩余令牌数
         List<Long> rateLimitResponse = this.stringRedisTemplate.execute(this.rateLimitRedisScript, keys, scriptArgs.toArray());
         Assert.notNull(rateLimitResponse, "redis execute redis lua limit failed.");
@@ -95,13 +98,13 @@ public class RateLimitInterceptor implements ApplicationContextAware {
     private long getCurrentTimeLong(TimeUnit timeUnit) {
         switch (timeUnit) {
             case SECONDS:
-                return 1;
+                return 1000;
             case MINUTES:
-                return 60;
+                return 1000 * 60;
             case HOURS:
-                return 60 * 60;
+                return 1000 * 60 * 60;
             case DAYS:
-                return 60 * 60 * 24;
+                return 1000 * 60 * 60 * 24;
             default:
                 throw new IllegalArgumentException("timeUnit:" + timeUnit + " not support");
         }
